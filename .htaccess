@@ -1,0 +1,18 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Permitir arquivos e pastas existentes
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Roteamento amigável para a API
+    RewriteRule ^api/gerar-prova$ api.php?action=gerar-prova [QSA,L]
+    RewriteRule ^api/salvar-resultado$ api.php?action=salvar-resultado [QSA,L]
+    RewriteRule ^api/historico$ api.php?action=historico [QSA,L]
+    RewriteRule ^api/disciplinas$ api.php?action=disciplinas [QSA,L]
+</IfModule>
+
+# Charset padrão UTF-8
+AddDefaultCharset UTF-8

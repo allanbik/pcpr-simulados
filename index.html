@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal de Simulados PC PR 2026 | Banca FGV - Agente e Papiloscopista</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ========================================================================
+       HEADER FIXO COM CRONÔMETRO DE 5 HORAS E BARRA DE PROGRESSO
+       ======================================================================== -->
+  <header class="top-header" id="topHeader">
+    <div class="header-container">
+      <div class="header-brand">
+        <div class="badge-icon">PC</div>
+        <div class="brand-text">
+          <h1>SIMULADOS PC PR 2026</h1>
+          <span>Banca FGV &bull; Agente e Papiloscopista Policial</span>
+        </div>
+      </div>
+
+      <!-- Cronômetro Regressivo (5h) -->
+      <div class="timer-box" id="timerBox" style="display: none;">
+        <span class="timer-icon">⏱️</span>
+        <div>
+          <div class="timer-digits" id="timerDigits">05:00:00</div>
+          <div class="timer-label">Tempo Restante</div>
+        </div>
+      </div>
+
+      <!-- Ações do Header -->
+      <div class="header-actions">
+        <div class="progress-pill" id="progressCount">
+          Respondidas: <strong>0</strong> / 100
+        </div>
+        <button class="btn-finish-header" id="btnFinishHeader" style="display: none;" type="button">
+          <span>🏁 Finalizar e Corrigir Prova</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Barra de Progresso Linear -->
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill" id="progressBarFill"></div>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       CONTEÚDO PRINCIPAL (SPA)
+       ======================================================================== -->
+  <main class="main-wrapper">
+
+    <!-- ======================================================================
+         TELA 1: DASHBOARD INICIAL
+         ====================================================================== -->
+    <section class="view-section active" id="viewDashboard">
+      
+      <!-- Hero de Boas-Vindas -->
+      <div class="welcome-hero">
+        <div class="hero-badge">Polícia Civil do Estado do Paraná &bull; Edital 2026</div>
+        <h2 class="hero-title">Prepare-se com Provas Reais no Padrão FGV</h2>
+        <p class="hero-subtitle">
+          Gere simulados completos de 100 questões inéditas selecionadas aleatoriamente do banco de dados,
+          respeitando rigorosamente a proporção oficial de disciplinas do edital com 5 horas de prova.
+        </p>
+        <div class="hero-actions">
+          <button class="btn-primary-hero" id="btnStartExamHero" type="button">
+            <span>⚡ Gerar Novo Simulado PC PR 2026</span>
+          </button>
+          <button class="btn-secondary-hero" id="btnImportarApostilas" type="button" title="Importa 262 questões extraídas diretamente dos arquivos Word das apostilas para o banco de dados">
+            <span>📥 Importar +262 Questões das Apostilas</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Grade Informativa do Edital -->
+      <div class="dashboard-grid">
+        
+        <!-- Bloco 1: Conhecimentos Gerais -->
+        <div class="info-card">
+          <h3>📘 1. Conhecimentos Gerais (35 Questões)</h3>
+          <ul class="rules-list">
+            <li>
+              <span>Língua Portuguesa (Gramática & Interpretação FGV)</span>
+              <span class="rules-tag">15 questões</span>
+            </li>
+            <li>
+              <span>Raciocínio Lógico-Matemático (RLM)</span>
+              <span class="rules-tag">10 questões</span>
+            </li>
+            <li>
+              <span>Realidade Histórica e Geográfica do Paraná</span>
+              <span class="rules-tag">10 questões</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Bloco 2: Conhecimentos Específicos -->
+        <div class="info-card">
+          <h3>⚖️ 2. Conhecimentos Específicos (65 Questões)</h3>
+          <ul class="rules-list">
+            <li>
+              <span>Direito Administrativo & Regime Policial PR</span>
+              <span class="rules-tag">10 questões</span>
+            </li>
+            <li>
+              <span>Direito Constitucional & Segurança Pública</span>
+              <span class="rules-tag">10 questões</span>
+            </li>
+            <li>
+              <span>Direito Penal (Geral & Especial)</span>
+              <span class="rules-tag">15 questões</span>
+            </li>
+            <li>
+              <span>Direito Processual Penal & Cadeia de Custódia</span>
+              <span class="rules-tag">15 questões</span>
+            </li>
+            <li>
+              <span>Legislação Penal Especial (Drogas, Armas, Abuso)</span>
+              <span class="rules-tag">15 questões</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Bloco 3: Histórico de Simulados Realizados -->
+        <div class="history-card">
+          <h3>📊 Histórico de Simulados Salvos no Banco de Dados</h3>
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Simulado</th>
+                  <th>Data e Hora</th>
+                  <th>Acertos</th>
+                  <th>Aproveitamento</th>
+                  <th>Tempo Gasto</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody">
+                <tr>
+                  <td colspan="5" style="text-align: center; color: #94a3b8; padding: 1.5rem;">
+                    Carregando histórico do servidor...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         TELA 2: AMBIENTE DE PROVA (SIMULADO ATIVO)
+         ====================================================================== -->
+    <section class="view-section" id="viewExam">
+      <div class="exam-layout">
+
+        <!-- Barra Lateral: Matriz de 1 a 100 -->
+        <aside class="exam-sidebar">
+          <div class="sidebar-header">
+            <div class="sidebar-title">
+              <span>Navegador de Questões</span>
+              <span style="font-size: 0.8rem; color: #64748b;">1 a 100</span>
+            </div>
+            
+            <div class="filter-pills">
+              <button class="btn-filter-pill active" data-filter="todas" type="button">Todas (100)</button>
+              <button class="btn-filter-pill" data-filter="pendentes" type="button">Pendentes</button>
+              <button class="btn-filter-pill" data-filter="marcadas" type="button">Marcadas ★</button>
+            </div>
+          </div>
+
+          <div class="sidebar-legend">
+            <div class="legend-item"><div class="legend-dot dot-pending"></div> Pendente</div>
+            <div class="legend-item"><div class="legend-dot dot-answered"></div> Respondida</div>
+            <div class="legend-item"><div class="legend-dot dot-review"></div> Revisar</div>
+          </div>
+
+          <div class="questions-matrix" id="questionsMatrix">
+            <!-- 100 botões gerados dinamicamente via JS -->
+          </div>
+        </aside>
+
+        <!-- Área Principal de Questões -->
+        <div class="exam-main">
+          
+          <!-- Barra de Controles de Visualização -->
+          <div class="exam-controls-bar">
+            <div style="font-size: 0.9rem; font-weight: 600; color: #1e293b;">
+              Caderno de Questões Objetivas PC PR
+            </div>
+            <div class="view-mode-toggle">
+              <button class="btn-toggle-mode active" id="btnModeFocus" type="button">
+                Modo Questão por Questão
+              </button>
+              <button class="btn-toggle-mode" id="btnModeScroll" type="button">
+                Modo Prova Completa (Scroll)
+              </button>
+            </div>
+          </div>
+
+          <!-- Container das Questões -->
+          <div id="examContainer">
+            <!-- Cards de questões injetados dinamicamente via JS -->
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         TELA 3: TELA DE RESULTADOS E ANÁLISE PEDAGÓGICA
+         ====================================================================== -->
+    <section class="view-section" id="viewResults">
+      
+      <!-- Resumo Principal da Nota -->
+      <div class="results-hero">
+        <div class="score-main">
+          <div class="score-circle">
+            <div class="score-percent" id="resultPercent">0%</div>
+            <span>Nota Final</span>
+          </div>
+          <div class="score-details">
+            <h2>Resultado da Prova</h2>
+            <p id="resultScoreText">Você acertou 0 de 100 questões</p>
+            <div style="margin-top: 0.75rem;">
+              <span class="badge-score" id="resultStatusBadge">Classificado</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="results-stats-boxes">
+          <div class="stat-box acertos">
+            <span class="stat-val" id="statAcertos">0</span>
+            <span class="stat-lbl">Acertos</span>
+          </div>
+          <div class="stat-box erros">
+            <span class="stat-val" id="statErros">0</span>
+            <span class="stat-lbl">Erros</span>
+          </div>
+          <div class="stat-box tempo">
+            <span class="stat-val" id="statTempo">0h 0m</span>
+            <span class="stat-lbl">Tempo de Prova</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Banner de Diagnóstico Inteligente -->
+      <div class="diagnostic-banner">
+        <h3>🎯 Análise Pedagógica Personalizada</h3>
+        <p id="diagnosticText">
+          Diagnóstico do seu desempenho no simulado...
+        </p>
+      </div>
+
+      <!-- Desempenho por Disciplina -->
+      <div class="subjects-breakdown-card">
+        <h3>📈 Aproveitamento Detalhado por Disciplina</h3>
+        <div class="subject-bars-grid" id="subjectsBarsContainer">
+          <!-- Barras de progresso por matéria geradas via JS -->
+        </div>
+      </div>
+
+      <!-- Seção de Revisão Detalhada com Gabarito Comentado -->
+      <div class="review-section">
+        <div class="review-header">
+          <div>
+            <h3 style="font-size: 1.25rem; color: var(--primary);">Revisão e Gabarito Comentado</h3>
+            <p style="font-size: 0.88rem; color: #64748b;">Consulte a fundamentação doutrinária e jurídica de cada questão</p>
+          </div>
+
+          <div class="review-filters">
+            <button class="btn-review-filter filter-errors active" data-filter="erros" type="button">
+              ✕ Apenas Questões que Errei
+            </button>
+            <button class="btn-review-filter" data-filter="acertos" type="button">
+              ✓ Apenas Questões que Acertei
+            </button>
+            <button class="btn-review-filter" data-filter="todas" type="button">
+              Todas as 100 Questões
+            </button>
+          </div>
+        </div>
+
+        <!-- Lista de Questões Corrigidas -->
+        <div id="reviewListContainer">
+          <!-- Questões com gabarito e comentário injetadas via JS -->
+        </div>
+
+        <div style="text-align: center; margin-top: 2rem;">
+          <button class="btn-primary-hero" id="btnNovoSimuladoResultado" type="button">
+            <span>⚡ Gerar Outro Simulado PC PR 2026</span>
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ========================================================================
+       MODAL DE CONFIRMAÇÃO DE FINALIZAÇÃO
+       ======================================================================== -->
+  <div class="modal-backdrop" id="confirmModal">
+    <div class="modal-card">
+      <h3>Deseja finalizar o simulado?</h3>
+      <p>Uma vez finalizado, suas respostas serão computadas no banco de dados e o gabarito comentado será liberado para análise.</p>
+      
+      <div class="modal-warning-badge" id="modalTextPending">
+        Atenção: existem questões não respondidas.
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-modal-cancel" id="btnModalCancel" type="button">Continuar Respondendo</button>
+        <button class="btn-modal-confirm" id="btnModalConfirm" type="button">Sim, Entregar Prova</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rodapé -->
+  <footer class="site-footer">
+    <p>Portal de Provas e Simulados &bull; Polícia Civil do Paraná (PC PR 2026) &bull; Banca FGV</p>
+    <p style="margin-top: 0.3rem; font-size: 0.78rem;">Desenvolvido com PHP, MySQL e JavaScript Vanilla SPA.</p>
+  </footer>
+
+  <script src="data/questoes.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

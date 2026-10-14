@@ -1041,11 +1041,13 @@ const App = {
             if (item.percentual_acerto >= 75) badgeClass = 'high';
             else if (item.percentual_acerto >= 60) badgeClass = 'medium';
 
-            const userDisplay = item.usuario_email ? item.usuario_email : (item.usuario_nome || 'Candidato PC PR');
+            const userDisplay = item.usuario_email 
+                ? this.anonimizarEmail(item.usuario_email) 
+                : (item.usuario_nome || 'Candidato PC PR');
 
             tr.innerHTML = `
                 <td><strong>#${item.id}</strong></td>
-                <td><span style="font-weight: 600; color: #0b1f38;">${userDisplay}</span></td>
+                <td><span style="font-weight: 600; color: #0b1f38;">👤 ${userDisplay}</span></td>
                 <td>${item.data_formatada}</td>
                 <td>${item.total_acertos} / ${item.total_questoes}</td>
                 <td><span class="badge-score ${badgeClass}">${item.percentual_acerto}%</span></td>
@@ -1053,6 +1055,41 @@ const App = {
             `;
             this.dom.historyTableBody.appendChild(tr);
         });
+    },
+
+    /**
+     * Anonimiza o endereço de e-mail para privacidade (ex: allan@hotmail.com -> al***@hot***.com)
+     */
+    anonimizarEmail(email) {
+        if (!email || typeof email !== 'string') return 'Candidato PC PR';
+        const partes = email.trim().split('@');
+        if (partes.length !== 2) return email;
+
+        const [usuario, dominioCompleto] = partes;
+        
+        // Anonimiza a parte do usuário
+        let userMascarado = usuario;
+        if (usuario.length <= 2) {
+            userMascarado = usuario[0] + '***';
+        } else if (usuario.length <= 4) {
+            userMascarado = usuario.substring(0, 2) + '***';
+        } else {
+            userMascarado = usuario.substring(0, 2) + '***' + usuario.slice(-1);
+        }
+
+        // Anonimiza o domínio principal preservando a extensão (ex: hotmail.com -> hot***.com)
+        const partesDominio = dominioCompleto.split('.');
+        const nomeDominio = partesDominio[0];
+        const tld = partesDominio.slice(1).join('.');
+
+        let dominioMascarado = nomeDominio;
+        if (nomeDominio.length <= 3) {
+            dominioMascarado = nomeDominio[0] + '***';
+        } else {
+            dominioMascarado = nomeDominio.substring(0, 3) + '***';
+        }
+
+        return `${userMascarado}@${dominioMascarado}.${tld}`;
     },
 
     // ==========================================================================
@@ -1076,7 +1113,7 @@ const App = {
         if (u && u.email) {
             // Header
             if (this.dom.userPillHeader) this.dom.userPillHeader.style.display = 'inline-flex';
-            if (this.dom.headerUserEmail) this.dom.headerUserEmail.textContent = u.nome || u.email;
+            if (this.dom.headerUserEmail) this.dom.headerUserEmail.textContent = u.nome || this.anonimizarEmail(u.email);
             if (this.dom.headerUserCargo) this.dom.headerUserCargo.textContent = u.cargo || 'Agente PC PR';
             if (this.dom.btnOpenLoginModal) this.dom.btnOpenLoginModal.style.display = 'none';
 

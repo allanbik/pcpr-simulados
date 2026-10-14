@@ -13,7 +13,8 @@ const App = {
         USER_KEY: 'pcpr_usuario_ativo_v1',
         LEADS_KEY: 'pcpr_leads_cadastrados_v1',
         HISTORICO_KEY: 'pcpr_historico_local_v1',
-        API_BASE: 'api.php'
+        API_BASE: 'api.php',
+        WEBHOOK_URL: '' // Cole aqui a URL do seu Webhook (Google Apps Script / Formspree / Make / n8n)
     },
 
     // Estado da Aplicação
@@ -1191,6 +1192,16 @@ const App = {
                 });
             }
             localStorage.setItem(this.CONFIG.LEADS_KEY, JSON.stringify(leads));
+
+            // Disparo assíncrono para Webhook (Google Sheets / Formspree / Discord / Zapier)
+            this.enviarParaWebhook({
+                evento: 'lead_identificado',
+                email: usuario.email,
+                nome: usuario.nome || '',
+                cargo: usuario.cargo || 'Agente de Polícia',
+                data_hora: agora,
+                origem: window.location.href
+            });
         } catch (e) {
             console.warn('Erro ao salvar lead:', e);
         }
@@ -1201,12 +1212,52 @@ const App = {
         try {
             const leads = JSON.parse(localStorage.getItem(this.CONFIG.LEADS_KEY) || '[]');
             const idx = leads.findIndex(l => l.email === this.state.usuarioAtivo.email);
+            const agora = new Date().toLocaleString('pt-BR');
             if (idx >= 0) {
                 leads[idx].simuladosFeitos = (leads[idx].simuladosFeitos || 0) + 1;
-                leads[idx].ultimoSimulado = new Date().toLocaleString('pt-BR');
+                leads[idx].ultimoSimulado = agora;
                 localStorage.setItem(this.CONFIG.LEADS_KEY, JSON.stringify(leads));
+
+                this.enviarParaWebhook({
+                    evento: 'simulado_concluido',
+                    email: this.state.usuarioAtivo.email,
+                    nome: this.state.usuarioAtivo.nome || '',
+                    cargo: this.state.usuarioAtivo.cargo || '',
+                    acertos: this.state.resultado ? this.state.resultado.total_acertos : 0,
+                    total_questoes: this.state.resultado ? this.state.resultado.total_questoes : 100,
+                    percentual: this.state.resultado ? this.state.resultado.percentual_acerto : 0,
+                    tempo_gasto: this.state.resultado ? this.state.resultado.tempo_gasto_formatado : '',
+                    data_hora: agora
+                });
             }
         } catch (e) {}
+    },
+
+    /**
+     * Envio assíncrono para Webhook externo
+     * Compatível com Google Apps Script (Sheets), Formspree, n8n, Make, Discord ou Zapier
+     */
+    enviarParaWebhook(dados) {
+        if (!this.CONFIG.WEBHOOK_URL || !this.CONFIG.WEBHOOK_URL.trim()) {
+            return; // Webhook não configurado ainda
+        }
+
+        try {
+            fetch(this.CONFIG.WEBHOOK_URL, {
+                method: 'POST',
+                mode: 'no-cors', // Permite envio direto para Google Apps Script sem erro de CORS
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(dados)
+            }).then(() => {
+                console.log('Dados do lead transmitidos ao webhook com sucesso.');
+            }).catch(err => {
+                console.warn('Falha silenciosa ao enviar dados ao webhook:', err);
+            });
+        } catch (err) {
+            console.warn('Erro ao disparar webhook:', err);
+        }
     },
 
     exportarLeadsCSV() {

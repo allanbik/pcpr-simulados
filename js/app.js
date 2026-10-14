@@ -1126,14 +1126,57 @@ const App = {
         const nome = (this.dom.accessName ? this.dom.accessName.value : '').trim();
         const cargo = (this.dom.accessCargo ? this.dom.accessCargo.value : 'Agente de Polícia');
 
-        // Validação simples de e-mail
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!email || !emailRegex.test(email)) {
+        // Validação Robusta de E-mail
+        const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+        
+        // Verificações estruturais (tamanho, formato e TLD válido)
+        const partes = email.split('@');
+        const dominio = partes.length === 2 ? partes[1] : '';
+        const tld = dominio.includes('.') ? dominio.split('.').pop() : '';
+
+        // Domínios descartáveis ou de spam comuns
+        const dominiosDescartaveis = [
+            'tempmail.com', '10minutemail.com', 'guerrillamail.com', 'mailinator.com', 
+            'dispostable.com', 'trashmail.com', 'yopmail.com', 'test.com', 'exemplo.com'
+        ];
+
+        // Erros de digitação comuns de provedores
+        const errosDigitacao = {
+            'gmil.com': 'gmail.com',
+            'gmai.com': 'gmail.com',
+            'gmaill.com': 'gmail.com',
+            'hotmial.com': 'hotmail.com',
+            'hotmaill.com': 'hotmail.com',
+            'hmail.com': 'hotmail.com',
+            'outlok.com': 'outlook.com',
+            'outllok.com': 'outlook.com',
+            'yahho.com': 'yahoo.com'
+        };
+
+        let erroValidacao = null;
+
+        if (!email || !emailRegex.test(email) || !dominio || tld.length < 2) {
+            erroValidacao = 'Por favor, informe um e-mail válido (ex: seu.nome@gmail.com).';
+        } else if (dominiosDescartaveis.includes(dominio)) {
+            erroValidacao = 'Por favor, utilize um e-mail corporativo ou pessoal válido (e-mails temporários não são permitidos).';
+        } else if (errosDigitacao[dominio]) {
+            erroValidacao = `Você quis dizer @${errosDigitacao[dominio]}? Verifique o endereço digitado.`;
+        }
+
+        if (erroValidacao) {
             if (this.dom.accessErrorMsg) {
-                this.dom.accessErrorMsg.textContent = 'Por favor, insira um endereço de e-mail válido para acessar.';
+                this.dom.accessErrorMsg.innerHTML = `⚠️ ${erroValidacao}`;
                 this.dom.accessErrorMsg.style.display = 'block';
             }
+            if (this.dom.accessEmail) {
+                this.dom.accessEmail.focus();
+                this.dom.accessEmail.style.borderColor = '#ef4444';
+            }
             return;
+        }
+
+        if (this.dom.accessEmail) {
+            this.dom.accessEmail.style.borderColor = '';
         }
 
         const usuario = {

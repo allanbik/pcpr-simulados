@@ -1245,15 +1245,15 @@ const App = {
         try {
             fetch(this.CONFIG.WEBHOOK_URL, {
                 method: 'POST',
-                mode: 'no-cors', // Permite envio direto para Google Apps Script sem erro de CORS
+                mode: 'no-cors',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'text/plain;charset=utf-8'
                 },
                 body: JSON.stringify(dados)
             }).then(() => {
                 console.log('Dados do lead transmitidos ao webhook com sucesso.');
             }).catch(err => {
-                console.warn('Falha silenciosa ao enviar dados ao webhook:', err);
+                console.warn('Falha ao enviar dados ao webhook:', err);
             });
         } catch (err) {
             console.warn('Erro ao disparar webhook:', err);

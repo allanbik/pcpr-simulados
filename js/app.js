@@ -14,7 +14,7 @@ const App = {
         LEADS_KEY: 'pcpr_leads_cadastrados_v1',
         HISTORICO_KEY: 'pcpr_historico_local_v1',
         API_BASE: 'api.php',
-        WEBHOOK_URL: '' // Cole aqui a URL do seu Webhook (Google Apps Script / Formspree / Make / n8n)
+        WEBHOOK_URL: 'https://script.google.com/macros/s/AKfycbxUvJktPDj9UeUPUx2PakQoXKxyIizBVG6zEcld2KEUVVfU6drgtvUKPEieG9iXxo2M/exec'
     },
 
     // Estado da Aplicação

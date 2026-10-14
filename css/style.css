@@ -1276,3 +1276,284 @@ body {
     grid-template-columns: repeat(5, 1fr);
   }
 }
+
+/* ==============================================================================
+   CONTROLE DE ACESSO & IDENTIFICAÇÃO DO CANDIDATO
+   ============================================================================== */
+.user-pill-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(197, 155, 39, 0.4);
+  padding: 0.35rem 0.8rem;
+  border-radius: 20px;
+  backdrop-filter: blur(5px);
+}
+
+.user-pill-avatar {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.user-pill-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  text-align: left;
+}
+
+.user-pill-email {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #ffffff;
+  max-width: 170px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-pill-cargo {
+  font-size: 0.7rem;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.btn-user-logout {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.25rem 0.55rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-user-logout:hover {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.btn-user-login {
+  background: linear-gradient(135deg, var(--accent) 0%, #a17812 100%);
+  color: #0b1f38;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  transition: var(--transition);
+}
+
+.btn-user-login:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+/* Banner de Saudação no Hero */
+.user-greeting-banner {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(197, 155, 39, 0.5);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1.25rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  backdrop-filter: blur(8px);
+}
+
+.greeting-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: left;
+}
+
+.greeting-icon {
+  font-size: 1.8rem;
+}
+
+.greeting-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.greeting-title span {
+  color: var(--accent);
+}
+
+.greeting-subtitle {
+  font-size: 0.82rem;
+  color: #cbd5e1;
+}
+
+.btn-greeting-switch {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition);
+}
+
+.btn-greeting-switch:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Header do Card de Histórico & Botão CSV */
+.history-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.history-card-header h3 {
+  margin-bottom: 0;
+}
+
+.btn-export-leads {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: var(--transition);
+}
+
+.btn-export-leads:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* Modal de Acesso */
+.access-card {
+  max-width: 480px;
+  text-align: center;
+  border-top: 5px solid var(--accent);
+}
+
+.access-shield-badge {
+  display: inline-block;
+  background: var(--primary);
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  padding: 0.3rem 0.85rem;
+  border-radius: 20px;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--accent);
+}
+
+.form-group-access {
+  text-align: left;
+  margin-bottom: 1.1rem;
+}
+
+.form-group-access label {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.35rem;
+}
+
+.form-group-access .required-star {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.form-group-access .optional-tag {
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: normal;
+}
+
+.form-group-access input,
+.form-group-access select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid #cbd5e1;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: var(--text-main);
+  background-color: #f8fafc;
+  transition: var(--transition);
+}
+
+.form-group-access input:focus,
+.form-group-access select:focus {
+  outline: none;
+  border-color: var(--primary-light);
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(11, 31, 56, 0.1);
+}
+
+.access-error-msg {
+  background: var(--danger-bg);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #b91c1c;
+  padding: 0.65rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.modal-actions-access {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.btn-confirm-access {
+  background: linear-gradient(135deg, var(--primary) 0%, #16375f 100%);
+  color: #ffffff;
+  border: 1px solid var(--accent);
+  padding: 0.75rem 1.4rem;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-confirm-access:hover {
+  background: var(--accent);
+  color: #0b1f38;
+}
+
+.access-secure-note {
+  margin-top: 1.25rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+

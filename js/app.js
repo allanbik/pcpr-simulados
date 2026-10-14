@@ -10,12 +10,17 @@ const App = {
     CONFIG: {
         DURACAO_SEGUNDOS: 5 * 3600, // 5 horas
         STORAGE_KEY: 'pcpr_simulado_ativo_v1',
+        USER_KEY: 'pcpr_usuario_ativo_v1',
+        LEADS_KEY: 'pcpr_leads_cadastrados_v1',
+        HISTORICO_KEY: 'pcpr_historico_local_v1',
         API_BASE: 'api.php'
     },
 
     // Estado da Aplicação
     state: {
         telaAtual: 'dashboard', // 'dashboard' | 'simulado' | 'resultado'
+        usuarioAtivo: null,     // { email, nome, cargo, dataLogin }
+        pendenteAcaoAposLogin: null, // 'iniciarSimulado'
         questoes: [],
         respostas: {},          // { [questao_id]: 'A'|'B'|'C'|'D'|'E' }
         marcadasRevisao: {},    // { [questao_id]: true }
@@ -33,6 +38,7 @@ const App = {
     init() {
         this.cacheDOMElements();
         this.bindEvents();
+        this.carregarUsuarioAtivo();
         this.carregarHistoricoDashboard();
         this.verificarSimuladoSalvo();
     },
@@ -49,15 +55,28 @@ const App = {
             btnFinishHeader: document.getElementById('btnFinishHeader'),
             btnVoltarHome: document.getElementById('btnVoltarHome'),
 
+            // Controle de Acesso / Usuário no Header
+            userPillHeader: document.getElementById('userPillHeader'),
+            headerUserEmail: document.getElementById('headerUserEmail'),
+            headerUserCargo: document.getElementById('headerUserCargo'),
+            btnUserLogout: document.getElementById('btnUserLogout'),
+            btnOpenLoginModal: document.getElementById('btnOpenLoginModal'),
+
             // Telas
             viewDashboard: document.getElementById('viewDashboard'),
             viewExam: document.getElementById('viewExam'),
             viewResults: document.getElementById('viewResults'),
 
-            // Dashboard
+            // Dashboard & Hero
             btnStartExamHero: document.getElementById('btnStartExamHero'),
             btnImportarApostilas: document.getElementById('btnImportarApostilas'),
+            userGreetingBanner: document.getElementById('userGreetingBanner'),
+            greetingUserEmail: document.getElementById('greetingUserEmail'),
+            greetingUserCargo: document.getElementById('greetingUserCargo'),
+            btnSwitchUserHero: document.getElementById('btnSwitchUserHero'),
+            btnIdentificarHero: document.getElementById('btnIdentificarHero'),
             historyTableBody: document.getElementById('historyTableBody'),
+            btnExportLeads: document.getElementById('btnExportLeads'),
 
             // Simulado
             questionsMatrix: document.getElementById('questionsMatrix'),
@@ -66,11 +85,21 @@ const App = {
             btnModeScroll: document.getElementById('btnModeScroll'),
             filterMatrixPills: document.querySelectorAll('.btn-filter-pill'),
 
-            // Modal
+            // Modal de Finalização
             confirmModal: document.getElementById('confirmModal'),
             modalTextPending: document.getElementById('modalTextPending'),
             btnModalCancel: document.getElementById('btnModalCancel'),
             btnModalConfirm: document.getElementById('btnModalConfirm'),
+
+            // Modal de Controle de Acesso (E-mail)
+            accessModal: document.getElementById('accessModal'),
+            formAccess: document.getElementById('formAccess'),
+            accessEmail: document.getElementById('accessEmail'),
+            accessName: document.getElementById('accessName'),
+            accessCargo: document.getElementById('accessCargo'),
+            accessErrorMsg: document.getElementById('accessErrorMsg'),
+            btnCancelAccess: document.getElementById('btnCancelAccess'),
+            btnSubmitAccess: document.getElementById('btnSubmitAccess'),
 
             // Resultados
             resultPercent: document.getElementById('resultPercent'),
@@ -93,6 +122,29 @@ const App = {
         this.dom.btnStartExamHero.addEventListener('click', () => this.iniciarNovoSimulado());
         if (this.dom.btnNovoSimuladoResultado) {
             this.dom.btnNovoSimuladoResultado.addEventListener('click', () => this.iniciarNovoSimulado());
+        }
+
+        // Controle de Acesso
+        if (this.dom.btnOpenLoginModal) {
+            this.dom.btnOpenLoginModal.addEventListener('click', () => this.abrirModalAcesso());
+        }
+        if (this.dom.btnIdentificarHero) {
+            this.dom.btnIdentificarHero.addEventListener('click', () => this.abrirModalAcesso());
+        }
+        if (this.dom.btnSwitchUserHero) {
+            this.dom.btnSwitchUserHero.addEventListener('click', () => this.abrirModalAcesso());
+        }
+        if (this.dom.btnUserLogout) {
+            this.dom.btnUserLogout.addEventListener('click', () => this.logoutUsuario());
+        }
+        if (this.dom.formAccess) {
+            this.dom.formAccess.addEventListener('submit', (e) => this.salvarAcessoUsuario(e));
+        }
+        if (this.dom.btnCancelAccess) {
+            this.dom.btnCancelAccess.addEventListener('click', () => this.fecharModalAcesso());
+        }
+        if (this.dom.btnExportLeads) {
+            this.dom.btnExportLeads.addEventListener('click', () => this.exportarLeadsCSV());
         }
 
         // Importar questões das apostilas
@@ -171,7 +223,7 @@ const App = {
 
             if (this.state.tempoRestante <= 0) {
                 clearInterval(this.state.timerId);
-                alert("Tempo limite de 5 horas esgotado! Seu simulado será finalizado e corrigido automaticamente.");
+                this.exibirNotificacao("Tempo limite de 5 horas esgotado! Seu simulado será finalizado e corrigido automaticamente.", "error");
                 this.finalizarSimulado();
             }
         }, 1000);
@@ -209,29 +261,41 @@ const App = {
     // API: GERAR NOVO SIMULADO (HÍBRIDO: API PHP OU GITHUB PAGES OFFLINE)
     // ==========================================================================
     async iniciarNovoSimulado() {
+        // Controle de Acesso Obrigatório: exige pelo menos e-mail antes de começar
+        if (!this.state.usuarioAtivo) {
+            this.abrirModalAcesso('iniciarSimulado');
+            return;
+        }
+
         try {
             this.dom.btnStartExamHero.disabled = true;
             this.dom.btnStartExamHero.innerHTML = '<span>Sorteando 100 Questões FGV...</span>';
 
             let data = null;
 
-            // 1. Tenta carregar da API PHP
-            try {
-                const response = await fetch(`${this.CONFIG.API_BASE}?action=gerar-prova`);
-                if (response.ok) {
-                    data = await response.json();
+            // Se NÃO estiver no GitHub Pages, tenta carregar da API PHP
+            const isGitHubPages = window.location.hostname.endsWith('github.io') || window.location.protocol === 'file:';
+            if (!isGitHubPages) {
+                try {
+                    const response = await fetch(`${this.CONFIG.API_BASE}?action=gerar-prova`);
+                    if (response.ok) {
+                        const text = await response.text();
+                        if (text.trim().startsWith('{')) {
+                            data = JSON.parse(text);
+                        }
+                    }
+                } catch (netErr) {
+                    console.warn('API PHP não disponível, acionando motor Jamstack/GitHub Pages:', netErr);
                 }
-            } catch (netErr) {
-                console.warn('API PHP não disponível, acionando motor Jamstack/GitHub Pages:', netErr);
             }
 
-            // 2. Se a API não respondeu (ex: GitHub Pages), usa o motor local com BANCO_QUESTOES_COMPLETO
+            // Se a API não respondeu (ex: GitHub Pages), usa o motor local com BANCO_QUESTOES_COMPLETO
             if (!data || !data.sucesso || !data.questoes || data.questoes.length === 0) {
                 data = this.gerarProvaLocal();
             }
 
             if (!data || !data.questoes || data.questoes.length === 0) {
-                throw new Error('Não foi possível obter as questões da prova.');
+                throw new Error('Não foi possível carregar as questões. Verifique se o arquivo data/questoes.js foi carregado.');
             }
 
             // Reseta estado
@@ -266,8 +330,17 @@ const App = {
      * Respeita rigorosamente a distribuição de 100 questões do edital PC PR 2026 (FGV)
      */
     gerarProvaLocal() {
-        const banco = window.BANCO_QUESTOES_COMPLETO || [];
-        if (banco.length === 0) return null;
+        let banco = [];
+        if (typeof window !== 'undefined' && window.BANCO_QUESTOES_COMPLETO && Array.isArray(window.BANCO_QUESTOES_COMPLETO)) {
+            banco = window.BANCO_QUESTOES_COMPLETO;
+        } else if (typeof BANCO_QUESTOES_COMPLETO !== 'undefined' && Array.isArray(BANCO_QUESTOES_COMPLETO)) {
+            banco = BANCO_QUESTOES_COMPLETO;
+        }
+
+        if (!banco || banco.length === 0) {
+            console.error('BANCO_QUESTOES_COMPLETO não encontrado ou vazio!');
+            return null;
+        }
 
         const cotas = [
             { id: 1, nome: "Língua Portuguesa", tipo: "Gerais", cota: 15 },
@@ -603,9 +676,12 @@ const App = {
         const tempoTotalDisponivel = this.CONFIG.DURACAO_SEGUNDOS;
         const tempoGastoSegundos = Math.max(0, tempoTotalDisponivel - this.state.tempoRestante);
 
-        // Prepara payload
+        // Prepara payload com identificação do candidato
+        const user = this.state.usuarioAtivo;
         const payload = {
-            usuario_nome: 'Candidato PC PR 2026',
+            usuario_email: user ? user.email : 'candidato@email.com',
+            usuario_nome: user ? (user.nome || user.email) : 'Candidato PC PR 2026',
+            usuario_cargo: user ? user.cargo : 'Agente de Polícia',
             tempo_gasto_segundos: tempoGastoSegundos,
             respostas: this.state.respostas
         };
@@ -616,17 +692,23 @@ const App = {
             this.dom.btnFinishHeader.disabled = true;
             this.dom.btnFinishHeader.textContent = 'Corrigindo...';
 
-            try {
-                const response = await fetch(`${this.CONFIG.API_BASE}?action=salvar-resultado`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                if (response.ok) {
-                    data = await response.json();
+            const isGitHubPages = window.location.hostname.endsWith('github.io') || window.location.protocol === 'file:';
+            if (!isGitHubPages) {
+                try {
+                    const response = await fetch(`${this.CONFIG.API_BASE}?action=salvar-resultado`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.ok) {
+                        const text = await response.text();
+                        if (text.trim().startsWith('{')) {
+                            data = JSON.parse(text);
+                        }
+                    }
+                } catch (netErr) {
+                    console.warn('API PHP não disponível para salvar resultado, acionando motor local:', netErr);
                 }
-            } catch (netErr) {
-                console.warn('API PHP não disponível para salvar resultado, acionando motor local:', netErr);
             }
 
             // Fallback para correção direta no navegador (GitHub Pages)
@@ -746,12 +828,16 @@ const App = {
             questoes_corrigidas: corrigidas
         };
 
-        // Salva no histórico do LocalStorage
+        // Salva no histórico do LocalStorage com identificação do candidato
         try {
-            const histKey = 'pcpr_historico_local_v1';
+            const histKey = this.CONFIG.HISTORICO_KEY;
             const histAtual = JSON.parse(localStorage.getItem(histKey) || '[]');
+            const user = this.state.usuarioAtivo;
             const novoReg = {
                 id: histAtual.length + 1,
+                usuario_email: user ? user.email : (payload.usuario_email || 'candidato@email.com'),
+                usuario_nome: user ? (user.nome || user.email) : (payload.usuario_nome || 'Candidato PC PR'),
+                usuario_cargo: user ? user.cargo : (payload.usuario_cargo || 'Agente de Polícia'),
                 data_formatada: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}),
                 total_questoes: questoes.length,
                 total_acertos: totalAcertos,
@@ -760,7 +846,9 @@ const App = {
                 tempo_formatado: tempoFmt
             };
             histAtual.unshift(novoReg);
-            localStorage.setItem(histKey, JSON.stringify(histAtual.slice(0, 15)));
+            localStorage.setItem(histKey, JSON.stringify(histAtual.slice(0, 30)));
+
+            this.registrarSimuladoNoLead();
         } catch (e) {
             console.warn('Erro ao salvar histórico local:', e);
         }
@@ -899,44 +987,254 @@ const App = {
     },
 
     // ==========================================================================
-    // HISTÓRICO NO DASHBOARD
+    // HISTÓRICO NO DASHBOARD (LOCALSTORAGE + API PHP HÍBRIDO)
     // ==========================================================================
     async carregarHistoricoDashboard() {
-        try {
-            const response = await fetch(`${this.CONFIG.API_BASE}?action=historico`);
-            const data = await response.json();
+        let historico = [];
 
-            if (!data.sucesso || !data.historico || data.historico.length === 0) {
-                this.dom.historyTableBody.innerHTML = `
-                    <tr>
-                        <td colspan="5" style="text-align: center; color: #94a3b8; padding: 1.5rem;">
-                            Nenhum simulado registrado até o momento. Clique no botão acima para iniciar seu primeiro simulado!
-                        </td>
-                    </tr>
-                `;
+        // 1. Tenta carregar do LocalStorage
+        try {
+            const histLocal = JSON.parse(localStorage.getItem(this.CONFIG.HISTORICO_KEY) || '[]');
+            if (Array.isArray(histLocal) && histLocal.length > 0) {
+                historico = histLocal;
+            }
+        } catch (e) {
+            console.warn('Erro ao ler histórico local:', e);
+        }
+
+        // 2. Se não houver histórico local e não for GitHub Pages, tenta a API PHP
+        const isGitHubPages = window.location.hostname.endsWith('github.io') || window.location.protocol === 'file:';
+        if (historico.length === 0 && !isGitHubPages) {
+            try {
+                const response = await fetch(`${this.CONFIG.API_BASE}?action=historico`);
+                if (response.ok) {
+                    const text = await response.text();
+                    if (text.trim().startsWith('{')) {
+                        const data = JSON.parse(text);
+                        if (data.sucesso && Array.isArray(data.historico)) {
+                            historico = data.historico;
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn("Não foi possível carregar o histórico via API:", err);
+            }
+        }
+
+        if (historico.length === 0) {
+            this.dom.historyTableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; color: #94a3b8; padding: 1.5rem;">
+                        Nenhum simulado registrado até o momento. Identifique-se com seu e-mail e clique em "Iniciar Simulado" acima para começar seu primeiro teste!
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        this.dom.historyTableBody.innerHTML = '';
+        historico.forEach(item => {
+            const tr = document.createElement('tr');
+
+            let badgeClass = 'low';
+            if (item.percentual_acerto >= 75) badgeClass = 'high';
+            else if (item.percentual_acerto >= 60) badgeClass = 'medium';
+
+            const userDisplay = item.usuario_email ? item.usuario_email : (item.usuario_nome || 'Candidato PC PR');
+
+            tr.innerHTML = `
+                <td><strong>#${item.id}</strong></td>
+                <td><span style="font-weight: 600; color: #0b1f38;">${userDisplay}</span></td>
+                <td>${item.data_formatada}</td>
+                <td>${item.total_acertos} / ${item.total_questoes}</td>
+                <td><span class="badge-score ${badgeClass}">${item.percentual_acerto}%</span></td>
+                <td>${item.tempo_formatado}</td>
+            `;
+            this.dom.historyTableBody.appendChild(tr);
+        });
+    },
+
+    // ==========================================================================
+    // CONTROLE DE ACESSO & IDENTIFICAÇÃO DO CANDIDATO
+    // ==========================================================================
+    carregarUsuarioAtivo() {
+        try {
+            const salvo = localStorage.getItem(this.CONFIG.USER_KEY);
+            if (salvo) {
+                this.state.usuarioAtivo = JSON.parse(salvo);
+            }
+        } catch (e) {
+            console.warn('Erro ao carregar usuário ativo:', e);
+            this.state.usuarioAtivo = null;
+        }
+        this.atualizarUIUsuario();
+    },
+
+    atualizarUIUsuario() {
+        const u = this.state.usuarioAtivo;
+        if (u && u.email) {
+            // Header
+            if (this.dom.userPillHeader) this.dom.userPillHeader.style.display = 'inline-flex';
+            if (this.dom.headerUserEmail) this.dom.headerUserEmail.textContent = u.nome || u.email;
+            if (this.dom.headerUserCargo) this.dom.headerUserCargo.textContent = u.cargo || 'Agente PC PR';
+            if (this.dom.btnOpenLoginModal) this.dom.btnOpenLoginModal.style.display = 'none';
+
+            // Hero
+            if (this.dom.userGreetingBanner) this.dom.userGreetingBanner.style.display = 'flex';
+            if (this.dom.greetingUserEmail) this.dom.greetingUserEmail.textContent = u.nome || u.email;
+            if (this.dom.greetingUserCargo) this.dom.greetingUserCargo.textContent = u.cargo || 'Agente de Polícia';
+            if (this.dom.btnIdentificarHero) this.dom.btnIdentificarHero.style.display = 'none';
+        } else {
+            // Header
+            if (this.dom.userPillHeader) this.dom.userPillHeader.style.display = 'none';
+            if (this.dom.btnOpenLoginModal) this.dom.btnOpenLoginModal.style.display = 'inline-flex';
+
+            // Hero
+            if (this.dom.userGreetingBanner) this.dom.userGreetingBanner.style.display = 'none';
+            if (this.dom.btnIdentificarHero) this.dom.btnIdentificarHero.style.display = 'inline-flex';
+        }
+    },
+
+    abrirModalAcesso(acaoAposLogin = null) {
+        this.state.pendenteAcaoAposLogin = acaoAposLogin;
+        if (this.dom.accessModal) {
+            this.dom.accessModal.classList.add('active');
+            if (this.dom.accessErrorMsg) this.dom.accessErrorMsg.style.display = 'none';
+            if (this.state.usuarioAtivo) {
+                if (this.dom.accessEmail) this.dom.accessEmail.value = this.state.usuarioAtivo.email || '';
+                if (this.dom.accessName) this.dom.accessName.value = this.state.usuarioAtivo.nome || '';
+                if (this.dom.accessCargo) this.dom.accessCargo.value = this.state.usuarioAtivo.cargo || 'Agente de Polícia';
+            }
+            setTimeout(() => {
+                if (this.dom.accessEmail) this.dom.accessEmail.focus();
+            }, 100);
+        }
+    },
+
+    fecharModalAcesso() {
+        if (this.dom.accessModal) {
+            this.dom.accessModal.classList.remove('active');
+        }
+        this.state.pendenteAcaoAposLogin = null;
+    },
+
+    salvarAcessoUsuario(e) {
+        if (e && e.preventDefault) e.preventDefault();
+
+        const email = (this.dom.accessEmail ? this.dom.accessEmail.value : '').trim().toLowerCase();
+        const nome = (this.dom.accessName ? this.dom.accessName.value : '').trim();
+        const cargo = (this.dom.accessCargo ? this.dom.accessCargo.value : 'Agente de Polícia');
+
+        // Validação simples de e-mail
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email || !emailRegex.test(email)) {
+            if (this.dom.accessErrorMsg) {
+                this.dom.accessErrorMsg.textContent = 'Por favor, insira um endereço de e-mail válido para acessar.';
+                this.dom.accessErrorMsg.style.display = 'block';
+            }
+            return;
+        }
+
+        const usuario = {
+            email: email,
+            nome: nome,
+            cargo: cargo,
+            dataLogin: new Date().toISOString()
+        };
+
+        // Salva usuário ativo
+        localStorage.setItem(this.CONFIG.USER_KEY, JSON.stringify(usuario));
+        this.state.usuarioAtivo = usuario;
+
+        // Salva ou atualiza na lista de leads cadastrados
+        this.registrarLead(usuario);
+
+        this.atualizarUIUsuario();
+        this.fecharModalAcesso();
+
+        // Se o usuário clicou em iniciar antes de se identificar, dispara a prova agora
+        if (this.state.pendenteAcaoAposLogin === 'iniciarSimulado') {
+            this.state.pendenteAcaoAposLogin = null;
+            this.iniciarNovoSimulado();
+        } else {
+            this.carregarHistoricoDashboard();
+        }
+    },
+
+    logoutUsuario() {
+        if (confirm('Deseja realmente desconectar o candidato ativo?')) {
+            localStorage.removeItem(this.CONFIG.USER_KEY);
+            this.state.usuarioAtivo = null;
+            this.atualizarUIUsuario();
+            this.carregarHistoricoDashboard();
+        }
+    },
+
+    registrarLead(usuario) {
+        try {
+            const leads = JSON.parse(localStorage.getItem(this.CONFIG.LEADS_KEY) || '[]');
+            const idx = leads.findIndex(l => l.email === usuario.email);
+            const agora = new Date().toLocaleString('pt-BR');
+
+            if (idx >= 0) {
+                leads[idx].ultimoAcesso = agora;
+                leads[idx].cargo = usuario.cargo || leads[idx].cargo;
+                if (usuario.nome) leads[idx].nome = usuario.nome;
+            } else {
+                leads.push({
+                    email: usuario.email,
+                    nome: usuario.nome || '',
+                    cargo: usuario.cargo || 'Agente de Polícia',
+                    primeiroAcesso: agora,
+                    ultimoAcesso: agora,
+                    simuladosFeitos: 0
+                });
+            }
+            localStorage.setItem(this.CONFIG.LEADS_KEY, JSON.stringify(leads));
+        } catch (e) {
+            console.warn('Erro ao salvar lead:', e);
+        }
+    },
+
+    registrarSimuladoNoLead() {
+        if (!this.state.usuarioAtivo || !this.state.usuarioAtivo.email) return;
+        try {
+            const leads = JSON.parse(localStorage.getItem(this.CONFIG.LEADS_KEY) || '[]');
+            const idx = leads.findIndex(l => l.email === this.state.usuarioAtivo.email);
+            if (idx >= 0) {
+                leads[idx].simuladosFeitos = (leads[idx].simuladosFeitos || 0) + 1;
+                leads[idx].ultimoSimulado = new Date().toLocaleString('pt-BR');
+                localStorage.setItem(this.CONFIG.LEADS_KEY, JSON.stringify(leads));
+            }
+        } catch (e) {}
+    },
+
+    exportarLeadsCSV() {
+        try {
+            const leads = JSON.parse(localStorage.getItem(this.CONFIG.LEADS_KEY) || '[]');
+            if (leads.length === 0) {
+                alert('Nenhum candidato cadastrado até o momento.');
                 return;
             }
 
-            this.dom.historyTableBody.innerHTML = '';
-            data.historico.forEach(item => {
-                const tr = document.createElement('tr');
+            let csv = '\uFEFF'; // BOM para Excel abrir acentos em UTF-8
+            csv += 'E-mail;Nome;Cargo Pretendido;Primeiro Acesso;Último Acesso;Simulados Concluídos\n';
 
-                let badgeClass = 'low';
-                if (item.percentual_acerto >= 75) badgeClass = 'high';
-                else if (item.percentual_acerto >= 60) badgeClass = 'medium';
-
-                tr.innerHTML = `
-                    <td><strong>#${item.id}</strong></td>
-                    <td>${item.data_formatada}</td>
-                    <td>${item.total_acertos} / ${item.total_questoes}</td>
-                    <td><span class="badge-score ${badgeClass}">${item.percentual_acerto}%</span></td>
-                    <td>${item.tempo_formatado}</td>
-                `;
-                this.dom.historyTableBody.appendChild(tr);
+            leads.forEach(l => {
+                csv += `"${l.email}";"${l.nome || ''}";"${l.cargo || ''}";"${l.primeiroAcesso || ''}";"${l.ultimoAcesso || ''}";"${l.simuladosFeitos || 0}"\n`;
             });
 
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `candidatos_pcpr_simulados_${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         } catch (err) {
-            console.warn("Não foi possível carregar o histórico:", err);
+            alert('Erro ao exportar relatório CSV: ' + err.message);
         }
     },
 

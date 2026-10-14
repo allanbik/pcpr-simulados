@@ -24,7 +24,7 @@ if not exist "%GIT_CMD%" (
 )
 
 cd /d "E:\Projetos"
-echo [1/3] Verificando repositório e arquivos...
+echo [1/4] Verificando repositório e arquivos...
 "%GIT_CMD%" status >nul 2>nul
 if %errorlevel% neq 0 (
     echo [ERRO] Repositório Git não encontrado em E:\Projetos!
@@ -34,16 +34,22 @@ if %errorlevel% neq 0 (
 
 set "REPO_URL=https://github.com/allanbik/pcpr-simulados.git"
 
-echo [OK] Repositório local pronto para envio.
+echo [OK] Repositório local pronto.
 echo Repositório de Destino: %REPO_URL%
 echo.
 
-echo [2/3] Vinculando repositório remoto 'origin'...
+echo [2/4] Gravando alterações locais (git add e commit)...
+"%GIT_CMD%" add .
+"%GIT_CMD%" commit -m "feat: controle de acesso por e-mail, exportacao de leads e correcao de questoes no GitHub Pages" >nul 2>nul
+echo [OK] Modificações locais salvas com sucesso.
+echo.
+
+echo [3/4] Vinculando repositório remoto 'origin'...
 "%GIT_CMD%" remote remove origin >nul 2>nul
 "%GIT_CMD%" remote add origin %REPO_URL%
 "%GIT_CMD%" branch -M main
 
-echo [3/3] Enviando projeto para o GitHub (git push)...
+echo [4/4] Enviando projeto para o GitHub (git push)...
 echo.
 echo OBS: Se o navegador abrir uma janela do GitHub, basta clicar em 'Sign in' / 'Authorize'.
 echo.
@@ -52,26 +58,19 @@ echo.
 if %errorlevel% equ 0 (
     echo.
     echo ======================================================================
-    echo  🎉 SUCESSO! SEU CÓDIGO ESTÁ NO GITHUB COM SUCESSO!
+    echo  🎉 SUCESSO! SEU CÓDIGO ESTÁ ATUALIZADO NO GITHUB!
     echo ======================================================================
     echo.
-    echo 🌐 COMO ATIVAR O PORTAL NO AR (GITHUB PAGES):
-    echo  1. Abra: https://github.com/allanbik/pcpr-simulados/settings/pages
-    echo  2. Em 'Branch', selecione 'main' e a pasta '/(root)'
-    echo  3. Clique no botão 'Save'
-    echo.
-    echo  Em 1 minuto o seu simulado estará disponível no link:
+    echo  O GitHub Pages atualizará o seu site automaticamente em cerca de 30s:
     echo  👉 https://allanbik.github.io/pcpr-simulados/
     echo ======================================================================
 ) else (
     echo.
     echo ======================================================================
     echo  [AVISO DE AUTENTICAÇÃO]
-    echo  Caso tenha ocorrido erro de permissão ou autenticação:
-    echo  1. Você pode usar um Personal Access Token (classic) gerado em:
-    echo     https://github.com/settings/tokens
-    echo  2. Ou adicionar a chave SSH gerada em:
-    echo     https://github.com/settings/keys
+    echo  Caso tenha ocorrido erro de envio:
+    echo  1. Verifique sua conexão com a internet.
+    echo  2. Certifique-se de que sua conta está autorizada no GitHub.
     echo ======================================================================
 )
 

@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Portal de Simulados PC PR 2026 | Banca FGV - Agente e Papiloscopista</title>
+  <!-- SEO & Social -->
+  <meta name="description" content="Simulados completos para o concurso PC PR 2026 (Banca FGV). 100 questões, cronômetro de 5h e análise detalhada.">
+  <meta property="og:title" content="Portal de Simulados PC PR 2026">
+  <meta property="og:description" content="Simulados completos para o concurso PC PR 2026 (Banca FGV). 100 questões, cronômetro de 5h e análise detalhada.">
+  <meta property="og:url" content="https://allanbik.github.io/pcpr-simulados/">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://allanbik.github.io/pcpr-simulados/assets/og-image.png">
+  <link rel="icon" href="favicon.ico">
   <link rel="stylesheet" href="css/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -35,7 +43,20 @@
 
       <!-- Ações do Header -->
       <div class="header-actions">
-        <div class="progress-pill" id="progressCount">
+        <!-- Controle de Acesso / Usuário -->
+        <div class="user-pill-header" id="userPillHeader" style="display: none;">
+          <span class="user-pill-avatar">👮</span>
+          <div class="user-pill-meta">
+            <span class="user-pill-email" id="headerUserEmail">candidato@email.com</span>
+            <span class="user-pill-cargo" id="headerUserCargo">Agente PC PR</span>
+          </div>
+          <button class="btn-user-logout" id="btnUserLogout" type="button" title="Trocar ou Desconectar Candidato">Sair</button>
+        </div>
+        <button class="btn-user-login" id="btnOpenLoginModal" type="button">
+          <span>🔑 Identificar-se</span>
+        </button>
+
+        <div class="progress-pill" id="progressCount" style="display: none;">
           Respondidas: <strong>0</strong> / 100
         </div>
         <button class="btn-finish-header" id="btnFinishHeader" style="display: none;" type="button">
@@ -63,6 +84,19 @@
       <!-- Hero de Boas-Vindas -->
       <div class="welcome-hero">
         <div class="hero-badge">Polícia Civil do Estado do Paraná &bull; Edital 2026</div>
+        
+        <!-- Banner de Saudação do Usuário Logado -->
+        <div class="user-greeting-banner" id="userGreetingBanner" style="display: none;">
+          <div class="greeting-left">
+            <span class="greeting-icon">👮</span>
+            <div>
+              <div class="greeting-title">Bem-vindo(a), <span id="greetingUserEmail">candidato</span>!</div>
+              <div class="greeting-subtitle">Cargo Almejado: <strong id="greetingUserCargo">Agente de Polícia</strong> &bull; Banca FGV</div>
+            </div>
+          </div>
+          <button class="btn-greeting-switch" id="btnSwitchUserHero" type="button">Trocar Candidato</button>
+        </div>
+
         <h2 class="hero-title">Prepare-se com Provas Reais no Padrão FGV</h2>
         <p class="hero-subtitle">
           Gere simulados completos de 100 questões inéditas selecionadas aleatoriamente do banco de dados,
@@ -70,10 +104,10 @@
         </p>
         <div class="hero-actions">
           <button class="btn-primary-hero" id="btnStartExamHero" type="button">
-            <span>⚡ Gerar Novo Simulado PC PR 2026</span>
+            <span>⚡ Iniciar Simulado PC PR 2026 (100 Questões)</span>
           </button>
-          <button class="btn-secondary-hero" id="btnImportarApostilas" type="button" title="Importa 262 questões extraídas diretamente dos arquivos Word das apostilas para o banco de dados">
-            <span>📥 Importar +262 Questões das Apostilas</span>
+          <button class="btn-secondary-hero" id="btnIdentificarHero" type="button" style="display: none;">
+            <span>🔑 Acessar com meu E-mail</span>
           </button>
         </div>
       </div>
@@ -129,12 +163,18 @@
 
         <!-- Bloco 3: Histórico de Simulados Realizados -->
         <div class="history-card">
-          <h3>📊 Histórico de Simulados Salvos no Banco de Dados</h3>
+          <div class="history-card-header">
+            <h3>📊 Histórico de Simulados Realizados</h3>
+            <button class="btn-export-leads" id="btnExportLeads" type="button" title="Baixar lista de candidatos e e-mails cadastrados em CSV">
+              <span>📥 Exportar E-mails Cadastrados (CSV)</span>
+            </button>
+          </div>
           <div class="table-responsive">
             <table class="custom-table">
               <thead>
                 <tr>
                   <th>Simulado</th>
+                  <th>Candidato (E-mail)</th>
                   <th>Data e Hora</th>
                   <th>Acertos</th>
                   <th>Aproveitamento</th>
@@ -143,8 +183,8 @@
               </thead>
               <tbody id="historyTableBody">
                 <tr>
-                  <td colspan="5" style="text-align: center; color: #94a3b8; padding: 1.5rem;">
-                    Carregando histórico do servidor...
+                  <td colspan="6" style="text-align: center; color: #94a3b8; padding: 1.5rem;">
+                    Nenhum simulado finalizado ainda.
                   </td>
                 </tr>
               </tbody>
@@ -308,9 +348,9 @@
   <!-- ========================================================================
        MODAL DE CONFIRMAÇÃO DE FINALIZAÇÃO
        ======================================================================== -->
-  <div class="modal-backdrop" id="confirmModal">
+  <div class="modal-backdrop" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
     <div class="modal-card">
-      <h3>Deseja finalizar o simulado?</h3>
+      <h3 id="confirmModalTitle">Deseja finalizar o simulado?</h3>
       <p>Uma vez finalizado, suas respostas serão computadas no banco de dados e o gabarito comentado será liberado para análise.</p>
       
       <div class="modal-warning-badge" id="modalTextPending">
@@ -318,8 +358,53 @@
       </div>
 
       <div class="modal-actions">
-        <button class="btn-modal-cancel" id="btnModalCancel" type="button">Continuar Respondendo</button>
-        <button class="btn-modal-confirm" id="btnModalConfirm" type="button">Sim, Entregar Prova</button>
+        <button class="btn-modal-cancel" id="btnModalCancel" type="button" aria-label="Continuar Respondendo">Continuar Respondendo</button>
+        <button class="btn-modal-confirm" id="btnModalConfirm" type="button" aria-label="Sim, Entregar Prova">Sim, Entregar Prova</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL DE CONTROLE DE ACESSO (IDENTIFICAÇÃO POR E-MAIL)
+       ======================================================================== -->
+  <div class="modal-backdrop" id="accessModal">
+    <div class="modal-card access-card">
+      <div class="access-shield-badge">🏛️ PC PR</div>
+      <h3>Controle de Acesso ao Simulado</h3>
+      <p>Informe pelo menos o seu <strong>e-mail</strong> para liberar o caderno de 100 questões inéditas da PC PR 2026, salvar seu histórico e calcular seu gabarito comentado.</p>
+
+      <form id="formAccess">
+        <div class="form-group-access">
+          <label for="accessEmail">E-mail do Candidato <span class="required-star">*</span></label>
+          <input type="email" id="accessEmail" placeholder="exemplo: seu.email@gmail.com" required autocomplete="email">
+        </div>
+
+        <div class="form-group-access">
+          <label for="accessName">Nome ou Apelido <span class="optional-tag">(Opcional)</span></label>
+          <input type="text" id="accessName" placeholder="Ex: Allan Silva" autocomplete="name">
+        </div>
+
+        <div class="form-group-access">
+          <label for="accessCargo">Cargo Desejado</label>
+          <select id="accessCargo">
+            <option value="Agente de Polícia">Agente de Polícia Judiciária</option>
+            <option value="Papiloscopista Policial">Papiloscopista Policial</option>
+            <option value="Agente e Papiloscopista">Ambos os Cargos</option>
+          </select>
+        </div>
+
+        <div class="access-error-msg" id="accessErrorMsg" style="display: none;"></div>
+
+        <div class="modal-actions-access">
+          <button class="btn-modal-cancel" id="btnCancelAccess" type="button">Cancelar</button>
+          <button class="btn-modal-confirm btn-confirm-access" id="btnSubmitAccess" type="submit">
+            <span>🚀 Liberar e Iniciar Prova</span>
+          </button>
+        </div>
+      </form>
+
+      <div class="access-secure-note">
+        <span>🔒 Acesso seguro e gratuito &bull; Seus simulados e notas serão vinculados a este e-mail.</span>
       </div>
     </div>
   </div>
